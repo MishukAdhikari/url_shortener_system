@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUrlRequest;
 use App\Models\Url;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -29,12 +30,15 @@ class UrlController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request) // Todo: you can use StoreUrlRequest $request can be skipped
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'original_url' => 'required|string|max:255',
+            'original_url' => 'required|url|string|max:255',
         ]);
+
+        $this->authorize('create', Url::class);
+
         $data = $request->all();
         $data['user_id'] = Auth::user()->id;
         $data['name'] = Str::ucfirst($request->name);
@@ -57,14 +61,18 @@ class UrlController extends Controller
      */
     public function edit(Url $url)
     {
+        $this->authorize('update', $url);
+
         return view('urls.edit', ['url' => $url,]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Url $url)
+    public function update(Request $request, Url $url) // Todo: UpdateUrlRequest $request - not created yet
     {
+        $this->authorize('update', $url);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'original_url' => 'required|string|max:255',
@@ -79,6 +87,8 @@ class UrlController extends Controller
      */
     public function destroy(Url $url)
     {
+        $this->authorize('delete', $url);
+
         $url->delete();
         return redirect(route('urls.index'));
     }
@@ -86,7 +96,7 @@ class UrlController extends Controller
     //Redirect to original url from short url
     public function shorten_url($short_url)
     {
-        $find = Url::where('short_url', $short_url)->first();
+        $find = Url::where('short_url', $short_url)->first(); // Todo: Added index on migration, where you add where you must add index
 
         if($find) {
             $find->incrementAccessCount();
